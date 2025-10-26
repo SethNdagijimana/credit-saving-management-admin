@@ -30,11 +30,6 @@ Admin interface for managing Credit Jambo users and verifying device IDs.
 
 1. Clone the repository
 
-```bash
-   git clone https://github.com/yourusername/credit-jambo-admin.git
-   cd credit-jambo-admin
-```
-
 2. Set up environment variables
 
 ```bash
@@ -48,21 +43,16 @@ Admin interface for managing Credit Jambo users and verifying device IDs.
    node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-4. Edit `backend/.env` and update:
+4. **Important:** Make sure the Credit Jambo Client app is running (database must be available)
 
-   - Replace `your_admin_jwt_secret_here` with the generated secret
-   - Ensure `DB_URL` points to the same database as the client app
-
-5. **Important:** Make sure the Credit Jambo Client app is running (database must be available)
-
-6. Start the admin application
+5. Start the admin application
 
 ```bash
    cd ..
    docker compose up --build
 ```
 
-7. The Admin API will be available at `http://localhost:5001`
+6. The Admin API will be available at `http://localhost:5000`
 
 ## API Endpoints
 
@@ -101,18 +91,8 @@ CREATE TABLE IF NOT EXISTS admins (
 ```sql
 -- Password: Admin123! (hashed with bcrypt)
 INSERT INTO admins (name, email, password)
-VALUES ('Admin User', 'admin@creditjambo.com', '$2a$10$YourHashedPasswordHere');
+VALUES ('Admin User', 'adminexample.com', '$2a$10$YourHashedPasswordHere');
 ```
-
-Or use the registration script (to be created).
-
-## Environment Variables
-
-| Variable   | Description                            | Example                               |
-| ---------- | -------------------------------------- | ------------------------------------- |
-| PORT       | Admin server port                      | 5001                                  |
-| JWT_SECRET | Secret for JWT tokens                  | Use crypto.randomBytes(64)            |
-| DB_URL     | PostgreSQL connection (same as client) | postgres://user:pass@host:5432/dbname |
 
 ## Project Structure
 
@@ -134,12 +114,8 @@ credit-jambo-admin/
 │   ├── .env.example
 │   ├── Dockerfile
 │   └── package.json
-├── frontend/ (to be implemented)
+├── frontend/
 ├── .gitignore
 ├── docker-compose.yml
 └── README.md
 ```
-
-## License
-
-ISC

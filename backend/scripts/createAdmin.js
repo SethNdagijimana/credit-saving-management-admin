@@ -1,6 +1,6 @@
-import bcrypt from "bcryptjs"
 import dotenv from "dotenv"
 import pkg from "pg"
+import { hashPassword } from "../src/utils/hash.js"
 
 dotenv.config()
 const { Pool } = pkg
@@ -14,15 +14,15 @@ const createAdmin = async () => {
   const email = "admin@example.com"
   const password = "Admin123!"
 
-  const hashedPassword = await bcrypt.hash(password, 10)
+  const { hashed, salt } = hashPassword(password)
 
   try {
     const result = await pool.query(
-      "INSERT INTO admins (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email",
-      [name, email, hashedPassword]
+      "INSERT INTO admins (name, email, password, salt) VALUES ($1, $2, $3, $4) RETURNING id, name, email",
+      [name, email, hashed, salt]
     )
 
-    console.log("✅ Admin created successfully:", result.rows[0])
+    console.log("✅ Admin created:", result.rows[0])
     process.exit(0)
   } catch (error) {
     console.error("❌ Error creating admin:", error.message)

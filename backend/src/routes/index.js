@@ -7,18 +7,17 @@ import {
   unverifyUserDevice,
   verifyUserDevice
 } from "../controllers/userController.js"
+import { adminAuth } from "../middlewares/adminAuth.js"
 
 const router = express.Router()
 
-// Admin auth
 router.post("/admin/login", adminLogin)
 
-// User management
-router.get("/users", getAllUsers)
-router.get("/users/unverified", getUnverifiedUsers)
-router.patch("/users/:userId/verify", verifyUserDevice)
-router.patch("/users/:userId/unverify", unverifyUserDevice)
-router.delete("/users/:userId", deleteUser)
+router.get("/users", adminAuth, getAllUsers)
+router.get("/users/unverified", adminAuth, getUnverifiedUsers)
+router.patch("/users/:userId/verify", adminAuth, verifyUserDevice)
+router.patch("/users/:userId/unverify", adminAuth, unverifyUserDevice)
+router.delete("/users/:userId", adminAuth, deleteUser)
 
 // Test route
 router.get("/", (req, res) => {

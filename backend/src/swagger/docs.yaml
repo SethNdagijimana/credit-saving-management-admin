@@ -1,0 +1,226 @@
+openapi: 3.0.0
+info:
+  title: Credit Jambo Admin API
+  version: "1.0.0"
+  description: |
+    This API allows administrators to approve devices, manage users, and secure access.
+servers:
+  - url: http://localhost:5000/api
+    description: Local Admin Server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AdminLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          example: admin@example.com
+        password:
+          type: string
+          example: Admin123!
+    AdminLoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: ✅ Admin login successful
+        token:
+          type: string
+        admin:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            email: { type: string }
+    UserItem:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        deviceId: { type: string }
+        verified: { type: boolean }
+        balance:
+          type: number
+          example: 150.50
+        lastTransaction:
+          type: object
+          nullable: true
+          properties:
+            type:
+              type: string
+              enum: [deposit, withdrawal]
+            amount:
+              type: number
+            createdAt:
+              type: string
+              format: date-time
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+tags:
+  - name: Admin Auth
+    description: Authentication endpoints for admin users
+  - name: Users
+    description: Manage user accounts and device status
+
+paths:
+  # =======================================
+  #  ADMIN LOGIN
+  # =======================================
+  /admin/login:
+    post:
+      tags: [Admin Auth]
+      summary: Authenticate admin and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+      responses:
+        200:
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResponse"
+        400:
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # =======================================
+  #  GET ALL USERS
+  # =======================================
+  /users:
+    get:
+      security:
+        - bearerAuth: []
+      tags: [Users]
+      summary: Get all registered users with balance + last transaction
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: Number of records per page
+      responses:
+        200:
+          description: User list retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserItem"
+        401:
+          $ref: "#/components/schemas/ErrorResponse"
+
+  # =======================================
+  #  GET ONLY UNVERIFIED USERS
+  # =======================================
+  /users/unverified:
+    get:
+      security:
+        - bearerAuth: []
+      tags: [Users]
+      summary: Get unverified users pending admin approval
+      responses:
+        200:
+          description: Unverified users retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserItem"
+
+  # =======================================
+  #  VERIFY DEVICE
+  # =======================================
+  /users/{userId}/verify:
+    patch:
+      security:
+        - bearerAuth: []
+      tags: [Users]
+      summary: Approve and verify user device
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Device verified successfully
+        404:
+          $ref: "#/components/schemas/ErrorResponse"
+
+  # =======================================
+  #  UNVERIFY DEVICE
+  # =======================================
+  /users/{userId}/unverify:
+    patch:
+      security:
+        - bearerAuth: []
+      tags: [Users]
+      summary: Revoke access and mark device as unverified
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Device unverified successfully
+        404:
+          $ref: "#/components/schemas/ErrorResponse"
+
+  # =======================================
+  #  DELETE USER
+  # =======================================
+  /users/{userId}:
+    delete:
+      security:
+        - bearerAuth: []
+      tags: [Users]
+      summary: Delete a user account
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: User deleted
+        404:
+          $ref: "#/components/schemas/ErrorResponse"

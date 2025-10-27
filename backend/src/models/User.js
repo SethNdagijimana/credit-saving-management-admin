@@ -18,7 +18,7 @@ class User {
   // Get all users
   static async findAll() {
     const result = await pool.query(
-      "SELECT id, name, email, device_id, verified, created_at FROM users ORDER BY created_at DESC"
+      "SELECT id, name, email, device_id, verified, balance, created_at FROM users ORDER BY created_at DESC"
     )
     return result.rows
   }
@@ -26,7 +26,7 @@ class User {
   // Get unverified users only
   static async findUnverified() {
     const result = await pool.query(
-      "SELECT id, name, email, device_id, created_at FROM users WHERE verified = false ORDER BY created_at DESC"
+      "SELECT id, name, email, device_id, verified, balance, created_at FROM users WHERE verified = false ORDER BY created_at DESC"
     )
     return result.rows
   }

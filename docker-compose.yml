@@ -19,6 +19,9 @@ services:
     container_name: credit-jambo-admin-frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       REACT_APP_ADMIN_API: http://localhost:5000/api
     depends_on:

@@ -4,6 +4,7 @@ import express from "express"
 import rateLimit from "express-rate-limit"
 import helmet from "helmet"
 import router from "./routes/index.js"
+import { swaggerDocs } from "./utils/swagger.js"
 
 dotenv.config()
 const app = express()
@@ -18,3 +19,5 @@ app.use("/api", router)
 
 const PORT = process.env.PORT || 5001
 app.listen(PORT, () => console.log(`✅ Admin Server running on port ${PORT}`))
+
+swaggerDocs(app)

@@ -43,7 +43,7 @@ Admin interface for managing Credit Jambo users and verifying device IDs.
    node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-4. **Important:** Make sure the Credit Jambo Client app is running (database must be available)
+4. **Important:** Make sure the Credit Jambo admin app is running (database must be available)
 
 5. Start the admin application
 
@@ -52,7 +52,9 @@ Admin interface for managing Credit Jambo users and verifying device IDs.
    docker compose up --build
 ```
 
-6. The Admin API will be available at `http://localhost:5000`
+6. The Admin API will be available at `http://localhost:5000`,
+   Admin Server: http://localhost:5000/api
+   Swagger Docs: http://localhost:5000/api-docs
 
 ## API Endpoints
 

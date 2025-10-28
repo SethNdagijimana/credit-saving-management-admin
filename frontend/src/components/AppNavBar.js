@@ -1,9 +1,16 @@
 import { LogOut, User, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { useNavigate } from "react-router-dom"
+import { LOGOUT } from "../actions/login/login-action"
 
 const AppNavBar = () => {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
+  const { user } = useSelector((state) => state.app.userMngmt || {})
 
   useEffect(() => {
     const closeDropdown = (e) => {
@@ -15,10 +22,10 @@ const AppNavBar = () => {
     return () => document.removeEventListener("click", closeDropdown)
   }, [])
 
-  // const handleLogout = () => {
-  //   dispatch({ type: LOGOUT })
-  //   navigate("/")
-  // }
+  const handleLogout = () => {
+    dispatch({ type: LOGOUT })
+    navigate("/")
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -27,14 +34,14 @@ const AppNavBar = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <span className="text-lg md:text-2xl font-bold text-primary dark:text-white">
-                Welcome to credit jambo
+                Welcome to Credit jambo
               </span>
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
             <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
-              {/* {user.username || user.full_name} */} Seth
+              {user.name}
             </span>
 
             <div className="relative profile-menu">
@@ -52,10 +59,10 @@ const AppNavBar = () => {
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5">
                   <p className="md:hidden flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">
-                    {/* {user.username} */} Admin
+                    {user.name}
                   </p>
                   <button
-                    // onClick={handleLogout}
+                    onClick={handleLogout}
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
                   >
                     <LogOut className="h-4 w-4 mr-2" />

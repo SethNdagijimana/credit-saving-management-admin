@@ -157,7 +157,6 @@ const DashboardLayout = ({
           shadow-2xl z-50 border-r border-white/10
         `}
       >
-        {/* Decorative gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-emerald-900/20 pointer-events-none"></div>
 
         <div className="flex flex-col h-full relative z-10">
@@ -195,7 +194,6 @@ const DashboardLayout = ({
             )}
           </div>
 
-          {/* Navigation - Enhanced */}
           <nav className="flex-1 px-3 py-4 sm:py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             <ul className="space-y-1.5">
               {menuItems.map((menu) => (
@@ -214,7 +212,6 @@ const DashboardLayout = ({
                       ${menu.disabled ? themeColors.disabled : ""}
                     `}
                   >
-                    {/* Active indicator bar */}
                     {location.pathname === menu.path && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-r-full"></div>
                     )}
@@ -233,7 +230,6 @@ const DashboardLayout = ({
                       </span>
                     )}
 
-                    {/* Badge for notifications */}
                     {menu.badge && shouldShowMenuText() && (
                       <span className="ml-auto bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
                         {menu.badge}
@@ -245,7 +241,6 @@ const DashboardLayout = ({
             </ul>
           </nav>
 
-          {/* Sidebar Footer - Enhanced */}
           <div
             className={`p-4 border-t ${themeColors.border} bg-black/20 backdrop-blur-sm`}
           >
@@ -301,11 +296,10 @@ const DashboardLayout = ({
             >
               <Menu size={20} />
             </button>
-            <div className="flex-1 overflow-hidden">{children.nav}</div>
+            <div className="flex-1 overflow-visible">{children.nav}</div>
           </div>
         </header>
 
-        {/* Main Content Area - Enhanced */}
         <main className="min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
           <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
             {children.content}

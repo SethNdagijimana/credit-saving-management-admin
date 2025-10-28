@@ -5,7 +5,6 @@ import {
   getUnverifiedUsersService
 } from "../services/adminUserService.js"
 
-// ✅ Uses Service + DTO
 export const getAllUsers = async (req, res) => {
   try {
     const results = await getAllUsersService()
@@ -18,7 +17,6 @@ export const getAllUsers = async (req, res) => {
   }
 }
 
-// ✅ Uses Service + DTO
 export const getUnverifiedUsers = async (req, res) => {
   try {
     const results = await getUnverifiedUsersService()
@@ -31,7 +29,6 @@ export const getUnverifiedUsers = async (req, res) => {
   }
 }
 
-// ✅ Leave exactly as it was (Admin permission only)
 export const verifyUserDevice = async (req, res) => {
   const { userId } = req.params
   const user = await User.verifyDevice(userId)
@@ -39,7 +36,6 @@ export const verifyUserDevice = async (req, res) => {
   res.json({ message: "User verified", user })
 }
 
-// ✅ Leave exactly as it was
 export const unverifyUserDevice = async (req, res) => {
   const { userId } = req.params
   const user = await User.unverifyDevice(userId)
@@ -47,7 +43,6 @@ export const unverifyUserDevice = async (req, res) => {
   res.json({ message: "User unverified", user })
 }
 
-// ✅ Leave exactly as it was
 export const deleteUser = async (req, res) => {
   const { userId } = req.params
   const user = await User.delete(userId)

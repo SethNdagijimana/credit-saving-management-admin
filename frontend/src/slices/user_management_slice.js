@@ -1,9 +1,16 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { userAuthenticationAction } from "../actions/login/login-action"
+import {
+  deleteUser,
+  fetchAllUsers,
+  fetchNotifications,
+  fetchUnverifiedUsers,
+  unverifyUser,
+  userAuthenticationAction,
+  verifyUser
+} from "../actions/login/login-action"
 
 const checkAuth = () => {
   const accessToken = localStorage.getItem("accessToken")
-
   const user = localStorage.getItem("user")
   return !!(accessToken && user)
 }
@@ -29,7 +36,17 @@ const initialState = {
   isAuthenticated: checkAuth(),
   loading: false,
   success: false,
-  error: false
+  error: false,
+
+  users: [],
+  usersLoading: false,
+  usersError: null,
+
+  notifications: [],
+  notificationsLoading: false,
+  notificationsError: null,
+
+  actionLoading: false
 }
 
 const userManagementSlice = createSlice({
@@ -91,6 +108,7 @@ const userManagementSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
+      /* --- auth login flow --- */
       .addCase(userAuthenticationAction.pending, (state) => {
         state.loading = true
         state.error = false
@@ -103,7 +121,6 @@ const userManagementSlice = createSlice({
         state.error = false
         state.user = user
         state.tokens = { ...state.tokens, access: token }
-
         state.isAuthenticated = true
       })
       .addCase(userAuthenticationAction.rejected, (state) => {
@@ -111,6 +128,86 @@ const userManagementSlice = createSlice({
         state.error = true
         state.success = false
         state.isAuthenticated = false
+      })
+
+      .addCase(fetchAllUsers.pending, (state) => {
+        state.usersLoading = true
+        state.usersError = null
+      })
+      .addCase(fetchAllUsers.fulfilled, (state, action) => {
+        state.usersLoading = false
+        state.users = action.payload
+      })
+      .addCase(fetchAllUsers.rejected, (state, action) => {
+        state.usersLoading = false
+        state.usersError =
+          action.payload || action.error?.message || "Failed to fetch users"
+      })
+
+      .addCase(fetchUnverifiedUsers.pending, (state) => {
+        state.usersLoading = true
+        state.usersError = null
+      })
+      .addCase(fetchUnverifiedUsers.fulfilled, (state, action) => {
+        state.usersLoading = false
+        state.users = action.payload
+      })
+      .addCase(fetchUnverifiedUsers.rejected, (state, action) => {
+        state.usersLoading = false
+        state.usersError = action.payload || action.error?.message
+      })
+
+      .addCase(verifyUser.pending, (state) => {
+        state.actionLoading = true
+      })
+      .addCase(verifyUser.fulfilled, (state, action) => {
+        state.actionLoading = false
+        const updated = action.payload
+        state.users = state.users.map((u) =>
+          u.id === updated.id ? { ...u, verified: true, ...updated } : u
+        )
+      })
+      .addCase(verifyUser.rejected, (state) => {
+        state.actionLoading = false
+      })
+
+      .addCase(unverifyUser.pending, (state) => {
+        state.actionLoading = true
+      })
+      .addCase(unverifyUser.fulfilled, (state, action) => {
+        state.actionLoading = false
+        const updated = action.payload
+        state.users = state.users.map((u) =>
+          u.id === updated.id ? { ...u, verified: false, ...updated } : u
+        )
+      })
+      .addCase(unverifyUser.rejected, (state) => {
+        state.actionLoading = false
+      })
+
+      .addCase(deleteUser.pending, (state) => {
+        state.actionLoading = true
+      })
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.actionLoading = false
+        const { userId } = action.payload
+        state.users = state.users.filter((u) => u.id !== userId)
+      })
+      .addCase(deleteUser.rejected, (state) => {
+        state.actionLoading = false
+      })
+
+      .addCase(fetchNotifications.pending, (state) => {
+        state.notificationsLoading = true
+        state.notificationsError = null
+      })
+      .addCase(fetchNotifications.fulfilled, (state, action) => {
+        state.notificationsLoading = false
+        state.notifications = action.payload
+      })
+      .addCase(fetchNotifications.rejected, (state, action) => {
+        state.notificationsLoading = false
+        state.notificationsError = action.payload || action.error?.message
       })
   }
 })

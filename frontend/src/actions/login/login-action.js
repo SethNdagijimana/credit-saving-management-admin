@@ -32,6 +32,84 @@ export const userAuthenticationAction = createAsyncThunk(
   }
 )
 
+export const fetchAllUsers = createAsyncThunk(
+  "users/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await apiCall.get("/users")
+
+      console.log("data==>", data)
+
+      return data.users || []
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err?.message || "Failed to fetch users"
+      )
+    }
+  }
+)
+export const fetchUnverifiedUsers = createAsyncThunk(
+  "users/fetchUnverifiedUsers",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await apiCall.get("/users/unverified")
+      return data.users || []
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message)
+    }
+  }
+)
+
+export const verifyUser = createAsyncThunk(
+  "users/verifyUser",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apiCall.patch(`/users/${userId}/verify`)
+
+      return data.user || { id: userId }
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message)
+    }
+  }
+)
+
+export const unverifyUser = createAsyncThunk(
+  "users/unverifyUser",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apiCall.patch(`/users/${userId}/unverify`)
+      return data.user || { id: userId }
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message)
+    }
+  }
+)
+
+export const deleteUser = createAsyncThunk(
+  "users/deleteUser",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apiCall.delete(`/users/${userId}`)
+      return { userId: data.userId ?? userId }
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message)
+    }
+  }
+)
+
+export const fetchNotifications = createAsyncThunk(
+  "users/fetchNotifications",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await apiCall.get("/notifications")
+
+      return data.notifications || []
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message)
+    }
+  }
+)
+
 export const logoutAction = createAsyncThunk(
   "auth/logout",
   async (_, { dispatch }) => {

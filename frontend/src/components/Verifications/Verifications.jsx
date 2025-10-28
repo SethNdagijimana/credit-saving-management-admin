@@ -1,139 +1,228 @@
-import { useState } from "react"
+import { Search } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import {
+  deleteUser,
+  fetchUnverifiedUsers,
+  verifyUser
+} from "../../actions/login/login-action"
+import ConfirmDeleteModal from "../Accounts/ConfirmDeleteModal"
 
 const Verifications = () => {
-  const [unverifiedUsers, setUnverifiedUsers] = useState([
-    {
-      id: 1,
-      name: "Alice Johnson",
-      email: "alice@example.com",
-      device_id: "abc123def456ghi789jkl012mno345pqr678",
-      created_at: "2024-10-27T10:30:00Z"
-    },
-    {
-      id: 2,
-      name: "Bob Williams",
-      email: "bob.williams@example.com",
-      device_id: "xyz987wvu654tsr321ponm098lkj765ihg432",
-      created_at: "2024-10-27T14:20:00Z"
-    },
-    {
-      id: 3,
-      name: "Carol Martinez",
-      email: "carol.m@example.com",
-      device_id: "def246ace135bdf024ghi357jkl680mno913",
-      created_at: "2024-10-28T08:15:00Z"
+  const dispatch = useDispatch()
+  const storeUsers = useSelector((state) => state.app?.userMngmt?.users || [])
+  const usersLoading = useSelector(
+    (state) => state.app?.userMngmt?.usersLoading
+  )
+  const usersError = useSelector((state) => state.app?.userMngmt?.usersError)
+
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [actionLoadingId, setActionLoadingId] = useState(null)
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [userToDelete, setUserToDelete] = useState(null)
+
+  useEffect(() => {
+    dispatch(fetchUnverifiedUsers())
+  }, [dispatch])
+
+  const users = useMemo(
+    () =>
+      (storeUsers || []).map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        device_id: u.deviceId ?? u.device_id ?? "-",
+        created_at: u.createdAt ?? u.created_at ?? null,
+
+        _raw: u
+      })),
+    [storeUsers]
+  )
+
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return users
+    return users.filter(
+      (u) =>
+        (u.name || "").toLowerCase().includes(q) ||
+        (u.email || "").toLowerCase().includes(q) ||
+        (u.device_id || "").toLowerCase().includes(q) ||
+        String(u.id).includes(q)
+    )
+  }, [users, searchQuery])
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const handleVerify = async (userId) => {
+    setActionLoadingId(userId)
+    try {
+      await dispatch(verifyUser(userId)).unwrap()
+      await dispatch(fetchUnverifiedUsers())
+    } catch (err) {
+      console.error("Verify failed:", err)
+      alert(err?.message || "Verify failed")
+    } finally {
+      setActionLoadingId(null)
     }
-  ])
-  const [loading, setLoading] = useState(false)
-
-  const handleVerify = (userId) => {
-    // Remove from list after verification
-    setUnverifiedUsers(unverifiedUsers.filter((u) => u.id !== userId))
-    alert("User verified successfully!")
   }
 
-  const handleReject = (userId) => {
-    // Remove from list after rejection
-    setUnverifiedUsers(unverifiedUsers.filter((u) => u.id !== userId))
-    alert("User rejected")
+  const openRejectConfirm = (user) => {
+    setUserToDelete(user)
+    setShowDeleteModal(true)
   }
 
-  const handleRefresh = () => {
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+  const handleRejectConfirmed = async () => {
+    if (!userToDelete) return
+    setActionLoadingId(userToDelete.id)
+    try {
+      await dispatch(deleteUser(userToDelete.id)).unwrap()
+      await dispatch(fetchUnverifiedUsers())
+      setShowDeleteModal(false)
+      setUserToDelete(null)
+    } catch (err) {
+      console.error("Delete failed:", err)
+      alert(err?.message || "Delete failed")
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const handleBulkVerify = async () => {
+    if (selectedIds.size === 0) return
+    setBulkLoading(true)
+    try {
+      for (const id of Array.from(selectedIds)) {
+        await dispatch(verifyUser(id)).unwrap()
+      }
+      await dispatch(fetchUnverifiedUsers())
+      clearSelection()
+    } catch (err) {
+      console.error("Bulk verify failed:", err)
+      alert(err?.message || "Bulk verify failed")
+    } finally {
+      setBulkLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Pending Device Verifications
             </h1>
             <p className="text-gray-600 text-sm mt-1">
-              {unverifiedUsers.length} user
-              {unverifiedUsers.length !== 1 ? "s" : ""} waiting for approval
+              {users.length} user{users.length !== 1 ? "s" : ""} waiting for
+              approval
             </p>
           </div>
-          <button
-            onClick={handleRefresh}
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-gray-700 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-sm border border-gray-200 text-sm sm:text-base"
-          >
-            🔄 Refresh
-          </button>
+
+          <div className="flex gap-2 items-center">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, email, device id..."
+                className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 outline-none w-72 text-sm"
+              />
+            </div>
+
+            <button
+              onClick={() => dispatch(fetchUnverifiedUsers())}
+              className="px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-50"
+            >
+              🔄 Refresh
+            </button>
+
+            <button
+              onClick={handleBulkVerify}
+              disabled={selectedIds.size === 0 || bulkLoading}
+              className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 disabled:opacity-50"
+            >
+              {bulkLoading
+                ? "Verifying..."
+                : `Verify selected (${selectedIds.size})`}
+            </button>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
-          {loading ? (
-            <div className="text-center py-16 sm:py-20">
-              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-green-500 mx-auto"></div>
-              <p className="text-gray-600 mt-4 text-sm sm:text-base">
-                Loading...
-              </p>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          {usersLoading ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+              <p className="text-gray-600 mt-4">Loading unverified users...</p>
             </div>
-          ) : unverifiedUsers.length === 0 ? (
-            <div className="text-center py-16 sm:py-20">
-              <div className="text-5xl sm:text-6xl mb-4">✅</div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                All Caught Up!
-              </h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                No pending verifications at the moment
-              </p>
+          ) : usersError ? (
+            <div className="text-red-600 p-4 rounded">{usersError}</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <h3 className="text-xl font-bold mb-2">All caught up</h3>
+              <p className="text-gray-600">No pending verifications.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {unverifiedUsers.map((user) => (
+            <div className="space-y-3">
+              {filtered.map((u) => (
                 <div
-                  key={user.id}
-                  className="border border-gray-200 rounded-lg sm:rounded-xl p-4 sm:p-6 hover:shadow-md transition-shadow"
+                  key={u.id}
+                  className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    {/* User Info */}
-                    <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-white flex-shrink-0 shadow-lg">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-gray-900 text-base sm:text-lg">
-                          {user.name}
-                        </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm truncate">
-                          {user.email}
-                        </p>
-                        <div className="mt-2 space-y-1">
-                          <p className="text-gray-500 text-xs flex items-start sm:items-center gap-1 flex-wrap">
-                            <span className="font-medium">Device ID:</span>
-                            <code className="bg-gray-100 px-2 py-1 rounded text-xs break-all">
-                              {user.device_id.substring(0, 20)}...
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(u.id)}
+                      onChange={() => toggleSelect(u.id)}
+                      className="mt-1"
+                    />
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold">
+                          {u.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {u.name}
+                          </div>
+                          <div className="text-xs text-gray-500">{u.email}</div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            <span className="font-medium">Device:</span>{" "}
+                            <code className="bg-gray-100 px-2 py-0.5 rounded text-xs">
+                              {u.device_id}
                             </code>
-                          </p>
-                          <p className="text-gray-500 text-xs">
-                            <span className="font-medium">Registered:</span>{" "}
-                            {new Date(user.created_at).toLocaleString()}
-                          </p>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-row gap-2 sm:gap-3 lg:flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleVerify(user.id)}
-                        className="flex-1 lg:flex-none px-4 sm:px-6 py-2 sm:py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-all shadow-sm text-sm sm:text-base"
+                        onClick={() => handleVerify(u.id)}
+                        disabled={actionLoadingId === u.id}
+                        className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
                       >
-                        ✓ Verify
+                        {actionLoadingId === u.id ? "Verifying..." : "Verify"}
                       </button>
+
                       <button
-                        onClick={() => handleReject(user.id)}
-                        className="flex-1 lg:flex-none px-4 sm:px-6 py-2 sm:py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-all shadow-sm text-sm sm:text-base"
+                        onClick={() => openRejectConfirm(u)}
+                        disabled={actionLoadingId === u.id}
+                        className="px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
                       >
-                        ✗ Reject
+                        Reject
                       </button>
                     </div>
                   </div>
@@ -142,42 +231,21 @@ const Verifications = () => {
             </div>
           )}
         </div>
-
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-            <div className="text-blue-600 text-2xl sm:text-3xl mb-3">⚡</div>
-            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">
-              Quick Verification
-            </h3>
-            <p className="text-gray-700 text-xs sm:text-sm">
-              Review user details and device information before approving
-              access.
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-            <div className="text-green-600 text-2xl sm:text-3xl mb-3">🔒</div>
-            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">
-              Secure Process
-            </h3>
-            <p className="text-gray-700 text-xs sm:text-sm">
-              Each device is verified to ensure account security and prevent
-              fraud.
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-            <div className="text-purple-600 text-2xl sm:text-3xl mb-3">📊</div>
-            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">
-              Track Activity
-            </h3>
-            <p className="text-gray-700 text-xs sm:text-sm">
-              Monitor verification trends in the Analytics dashboard.
-            </p>
-          </div>
-        </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={showDeleteModal}
+        title="Reject user"
+        message={`Are you sure you want to reject and delete ${
+          userToDelete?.name || "this user"
+        }? This action cannot be undone.`}
+        onCancel={() => {
+          setShowDeleteModal(false)
+          setUserToDelete(null)
+        }}
+        onConfirm={handleRejectConfirmed}
+        loading={actionLoadingId === userToDelete?.id}
+      />
     </div>
   )
 }

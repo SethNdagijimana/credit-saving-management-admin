@@ -7,7 +7,7 @@ export const adminLogin = async (req, res) => {
     const { token, admin } = await loginAdminService(email, password)
 
     res.json({
-      message: "✅ Admin login successful",
+      message: "Admin login successful",
       token,
       admin
     })

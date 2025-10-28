@@ -1,124 +1,235 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
 import {
   Area,
   AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis
 } from "recharts"
+import {
+  fetchAllUsers,
+  fetchNotifications,
+  fetchUnverifiedUsers
+} from "../../actions/login/login-action"
 
-const Analytics = () => {
+const safeDate = (v) => {
+  if (!v) return null
+  const d = new Date(v)
+  return isNaN(d) ? null : d
+}
+
+const monthLabel = (date) =>
+  date.toLocaleString(undefined, { month: "short", year: "numeric" })
+
+const AdminDashboard = () => {
+  const dispatch = useDispatch()
+  const users = useSelector((s) => s.app?.userMngmt?.users ?? [])
+  const unverified = useSelector((s) => s.app?.userMngmt?.unverified ?? [])
+  const notifications = useSelector(
+    (s) => s.app?.userMngmt?.notifications ?? []
+  )
+  const loading = useSelector((s) => s.app?.userMngmt?.loading ?? false)
+  const error = useSelector((s) => s.app?.userMngmt?.error ?? null)
+
   const [timeRange, setTimeRange] = useState("7d")
 
-  const userGrowthData = [
-    { month: "Jan", users: 120, verified: 95, loans: 45 },
-    { month: "Feb", users: 180, verified: 150, loans: 68 },
-    { month: "Mar", users: 240, verified: 200, loans: 92 },
-    { month: "Apr", users: 320, verified: 280, loans: 125 },
-    { month: "May", users: 420, verified: 370, loans: 168 },
-    { month: "Jun", users: 560, verified: 490, loans: 215 },
-    { month: "Jul", users: 720, verified: 640, loans: 278 },
-    { month: "Aug", users: 890, verified: 790, loans: 345 },
-    { month: "Sep", users: 1050, verified: 940, loans: 425 },
-    { month: "Oct", users: 1234, verified: 1100, loans: 520 }
-  ]
+  useEffect(() => {
+    dispatch(fetchAllUsers())
+    dispatch(fetchUnverifiedUsers())
+    dispatch(fetchNotifications())
+  }, [dispatch])
 
-  const loanDistribution = [
-    { name: "Active", value: 520, color: "#10b981" },
-    { name: "Completed", value: 336, color: "#3b82f6" },
-    { name: "Pending", value: 89, color: "#f59e0b" },
-    { name: "Defaulted", value: 23, color: "#ef4444" }
-  ]
-
-  const revenueData = [
-    { month: "Jan", revenue: 2.5, interest: 0.8, fees: 0.3 },
-    { month: "Feb", revenue: 3.8, interest: 1.2, fees: 0.5 },
-    { month: "Mar", revenue: 5.2, interest: 1.8, fees: 0.7 },
-    { month: "Apr", revenue: 7.1, interest: 2.4, fees: 0.9 },
-    { month: "May", revenue: 9.8, interest: 3.5, fees: 1.2 },
-    { month: "Jun", revenue: 13.2, interest: 4.8, fees: 1.6 },
-    { month: "Jul", revenue: 17.5, interest: 6.2, fees: 2.1 },
-    { month: "Aug", revenue: 22.8, interest: 8.1, fees: 2.7 },
-    { month: "Sep", revenue: 29.4, interest: 10.5, fees: 3.5 },
-    { month: "Oct", revenue: 38.2, interest: 13.8, fees: 4.6 }
-  ]
-
-  const verificationData = [
-    { day: "Mon", verified: 12, pending: 5, rejected: 2 },
-    { day: "Tue", verified: 15, pending: 8, rejected: 1 },
-    { day: "Wed", verified: 18, pending: 6, rejected: 3 },
-    { day: "Thu", verified: 14, pending: 9, rejected: 2 },
-    { day: "Fri", verified: 22, pending: 12, rejected: 4 },
-    { day: "Sat", verified: 8, pending: 4, rejected: 1 },
-    { day: "Sun", verified: 6, pending: 3, rejected: 0 }
-  ]
-
-  const metrics = [
-    {
-      label: "Total Users",
-      value: "1,234",
-      change: "+18.2%",
-      trend: "up",
-      icon: "👥",
-      color: "from-blue-500 to-blue-600"
-    },
-    {
-      label: "Active Loans",
-      value: "520",
-      change: "+12.5%",
-      trend: "up",
-      icon: "💰",
-      color: "from-green-500 to-green-600"
-    },
-    {
-      label: "Avg. Loan Size",
-      value: "RWF 145K",
-      change: "+8.3%",
-      trend: "up",
-      icon: "📊",
-      color: "from-purple-500 to-purple-600"
-    },
-    {
-      label: "Default Rate",
-      value: "2.4%",
-      change: "-0.8%",
-      trend: "down",
-      icon: "⚠️",
-      color: "from-orange-500 to-orange-600"
+  const { totalUsers, verifiedCount, pendingCountComputed } = useMemo(() => {
+    if (!Array.isArray(users) || users.length === 0) {
+      return { totalUsers: 0, verifiedCount: 0, pendingCountComputed: 0 }
     }
-  ]
 
-  const kpis = [
-    { label: "Conversion Rate", value: "89.1%", target: "85%", progress: 92 },
-    { label: "Avg. Approval Time", value: "4.2h", target: "6h", progress: 88 },
-    {
-      label: "Customer Satisfaction",
-      value: "4.7/5",
-      target: "4.5/5",
-      progress: 94
-    },
-    { label: "Repayment Rate", value: "97.6%", target: "95%", progress: 97 }
-  ]
+    // helper to safely get nested user object if backend wraps
+    const unwrap = (u) => {
+      if (!u) return null
+      // if structure is { user: { ... } } or { data: { user: {...} } }
+      if (u.user && typeof u.user === "object") return u.user
+      if (u.data && u.data.user && typeof u.data.user === "object")
+        return u.data.user
+      return u
+    }
+
+    // normalize a single user object into consistent shape
+    const normalize = (raw) => {
+      const u = unwrap(raw)
+      if (!u) return null
+
+      const id = u.id ?? u._id ?? u.userId ?? null
+      const email = u.email ?? u.email_address ?? null
+
+      // various ways verified might be represented
+      const verifiedCandidates = [
+        u.isVerified,
+        u.verified,
+        u.is_verified,
+        u.verification_status,
+        u.status // sometimes 'verified' string stored here
+      ]
+
+      let isVerified = false
+      for (const v of verifiedCandidates) {
+        if (v === true) {
+          isVerified = true
+          break
+        }
+        if (v === 1 || v === "1") {
+          isVerified = true
+          break
+        }
+        if (typeof v === "string" && v.toLowerCase() === "true") {
+          isVerified = true
+          break
+        }
+        if (typeof v === "string" && v.toLowerCase() === "verified") {
+          isVerified = true
+          break
+        }
+      }
+
+      return {
+        id,
+        email,
+        isVerified
+      }
+    }
+
+    // dedupe by id OR email (id preferred)
+    const map = new Map()
+    for (const raw of users) {
+      const u = normalize(raw)
+      if (!u) continue
+      const key = u.id ?? u.email ?? JSON.stringify(u) // last resort
+      if (!map.has(key)) {
+        map.set(key, u)
+      } else {
+        // if duplicate exists, prefer marking verified true if any duplicate is verified
+        const existing = map.get(key)
+        if (!existing.isVerified && u.isVerified) {
+          map.set(key, u)
+        }
+      }
+    }
+
+    const deduped = Array.from(map.values())
+    const total = deduped.length
+    const verified = deduped.reduce((acc, x) => acc + (x.isVerified ? 1 : 0), 0)
+    const pending = Math.max(0, total - verified)
+
+    // DEBUG: temporarily log counts so you can see what's being computed (remove in prod)
+    // console.log("raw users length:", users.length, "deduped length:", total, "verified:", verified)
+
+    return {
+      totalUsers: total,
+      verifiedCount: verified,
+      pendingCountComputed: pending
+    }
+  }, [users])
+
+  const unverifiedCount =
+    Array.isArray(unverified) && unverified.length > 0
+      ? unverified.length
+      : pendingCountComputed
+
+  const userGrowthData = useMemo(() => {
+    const monthsBack = 9
+    const map = new Map()
+    users.forEach((u) => {
+      const d = safeDate(
+        u.createdAt || u.created_at || u.signupDate || u.created
+      )
+      if (!d) return
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`
+      const rec = map.get(key) || { users: 0, verified: 0 }
+      rec.users += 1
+      if (u.isVerified || u.verified) rec.verified += 1
+      map.set(key, rec)
+    })
+
+    const out = []
+    const now = new Date()
+    for (let i = monthsBack; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`
+      const rec = map.get(key) || { users: 0, verified: 0 }
+      out.push({
+        month: monthLabel(d),
+        users: rec.users,
+        verified: rec.verified
+      })
+    }
+    return out
+  }, [users])
+
+  const verificationData = useMemo(() => {
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    const init = days.map((d) => ({
+      day: d,
+      verified: 0,
+      pending: 0,
+      rejected: 0
+    }))
+
+    const now = new Date()
+    const dayIndex = (now.getDay() + 6) % 7
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - dayIndex)
+    weekStart.setHours(0, 0, 0, 0)
+
+    users.forEach((u) => {
+      const when =
+        safeDate(u.verifiedAt) ||
+        safeDate(u.updatedAt) ||
+        safeDate(u.updated_at) ||
+        safeDate(u.createdAt) ||
+        safeDate(u.created_at)
+      if (!when) return
+      if (when < weekStart) return
+      const idx = (when.getDay() + 6) % 7
+      const bucket = init[idx]
+
+      if (u.reviewStatus === "rejected" || u.status === "rejected")
+        bucket.rejected += 1
+      else if (u.isVerified || u.verified) bucket.verified += 1
+      else bucket.pending += 1
+    })
+
+    return init
+  }, [users])
+
+  const recentNotifications = useMemo(() => {
+    return (notifications ?? [])
+      .slice()
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 6)
+  }, [notifications])
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Analytics Dashboard
             </h1>
             <p className="text-gray-600 text-sm mt-1">
-              Comprehensive insights and performance metrics
+              Live insights from users and notifications
             </p>
           </div>
 
@@ -134,7 +245,7 @@ const Analytics = () => {
                 onClick={() => setTimeRange(range.value)}
                 className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all ${
                   timeRange === range.value
-                    ? "bg-green-500 text-white shadow-md"
+                    ? "bg-primary text-white shadow-md"
                     : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
@@ -144,324 +255,172 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Key Metrics Grid */}
+        {loading && (
+          <div className="mb-6 p-4 bg-white rounded-xl shadow-sm text-sm text-gray-600">
+            Loading data…
+          </div>
+        )}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            {String(error)}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {metrics.map((metric, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div
-                  className={`bg-gradient-to-br ${metric.color} w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-xl sm:text-2xl shadow-lg`}
-                >
-                  {metric.icon}
-                </div>
-                <div
-                  className={`flex items-center space-x-1 text-xs sm:text-sm font-semibold ${
-                    metric.trend === "up" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  <span>{metric.trend === "up" ? "↑" : "↓"}</span>
-                  <span>{metric.change}</span>
-                </div>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-                {metric.value}
-              </h3>
-              <p className="text-gray-600 text-xs sm:text-sm font-medium">
-                {metric.label}
-              </p>
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="text-xs text-gray-500">Total Users</div>
+            <div className="text-2xl font-bold">
+              {totalUsers.toLocaleString()}
             </div>
-          ))}
+            <div className="text-sm text-gray-500 mt-1">Total users</div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="text-xs text-gray-500">Verified Users</div>
+            <div className="text-2xl font-bold">
+              {verifiedCount.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">Total Verified</div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="text-xs text-gray-500">Unverified</div>
+            <div className="text-2xl font-bold">
+              {unverifiedCount.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">Total Unverified</div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="text-xs text-gray-500">Notifications</div>
+            <div className="text-2xl font-bold">
+              {(notifications?.length ?? 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              Total notifications
+            </div>
+          </div>
         </div>
 
-        {/* Main Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* User Growth Chart */}
-          <div className="lg:col-span-2 bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
+          <div className="lg:col-span-2 bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                  User Growth
-                </h2>
-                <p className="text-gray-600 text-xs sm:text-sm mt-1">
-                  Total users and verification trends
+                <h2 className="text-lg font-bold text-gray-900">User Growth</h2>
+                <p className="text-gray-500 text-sm">
+                  Monthly signups (computed client-side)
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-gray-600">Total Users</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-600">Verified</span>
-                </div>
-              </div>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={userGrowthData}>
-                <defs>
-                  <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient
-                    id="colorVerified"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="month"
-                  stroke="#9ca3af"
-                  style={{ fontSize: "12px" }}
-                />
-                <YAxis stroke="#9ca3af" style={{ fontSize: "12px" }} />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="users"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorUsers)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="verified"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorVerified)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+
+            <div style={{ width: "100%", height: 260 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={userGrowthData}>
+                  <defs>
+                    <linearGradient id="gUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gVerified" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="users"
+                    stroke="#3b82f6"
+                    fill="url(#gUsers)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="verified"
+                    stroke="#10b981"
+                    fill="url(#gVerified)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
-          {/* Loan Distribution Pie Chart */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                Loan Status
-              </h2>
-              <p className="text-gray-600 text-xs sm:text-sm mt-1">
-                Distribution by status
-              </p>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={loanDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {loanDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 space-y-2 sm:space-y-3">
-              {loanDistribution.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    ></div>
-                    <span className="text-xs sm:text-sm text-gray-700 font-medium">
-                      {item.name}
-                    </span>
-                  </div>
-                  <span className="text-xs sm:text-sm font-bold text-gray-900">
-                    {item.value}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <h3 className="font-bold text-primary mb-3">
+              Recent Notifications
+            </h3>
+            {recentNotifications.length === 0 ? (
+              <div className="text-sm text-gray-500">No notifications</div>
+            ) : (
+              <ul className="space-y-3">
+                {recentNotifications.map((n) => (
+                  <li key={n.id} className="border rounded p-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-sm font-semibold">
+                          {n.user_name ?? n.email}
+                        </div>
+                        <div className="text-xs text-gray-600">{n.message}</div>
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(n.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Type: {n.type}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
-        {/* Revenue and Verification Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Revenue Chart */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                Revenue Breakdown
-              </h2>
-              <p className="text-gray-600 text-xs sm:text-sm mt-1">
-                Monthly revenue streams (Million RWF)
-              </p>
-            </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="month"
-                  stroke="#9ca3af"
-                  style={{ fontSize: "11px" }}
-                />
-                <YAxis stroke="#9ca3af" style={{ fontSize: "11px" }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: "12px" }} />
-                <Bar
-                  dataKey="revenue"
-                  fill="#10b981"
-                  radius={[8, 8, 0, 0]}
-                  name="Total Revenue"
-                />
-                <Bar
-                  dataKey="interest"
-                  fill="#3b82f6"
-                  radius={[8, 8, 0, 0]}
-                  name="Interest"
-                />
-                <Bar
-                  dataKey="fees"
-                  fill="#f59e0b"
-                  radius={[8, 8, 0, 0]}
-                  name="Fees"
-                />
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="bg-white rounded-xl p-4 shadow-sm mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900">
+              Weekly Verification Activity
+            </h3>
+            <div className="text-sm text-gray-500">Mon → Sun</div>
           </div>
-
-          {/* Weekly Verification Activity */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                Verification Activity
-              </h2>
-              <p className="text-gray-600 text-xs sm:text-sm mt-1">
-                Weekly verification trends
-              </p>
-            </div>
-            <ResponsiveContainer width="100%" height={250}>
+          <div style={{ width: "100%", height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={verificationData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="day"
-                  stroke="#9ca3af"
-                  style={{ fontSize: "11px" }}
-                />
-                <YAxis stroke="#9ca3af" style={{ fontSize: "11px" }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#014620" />
+                <XAxis dataKey="day" />
+                <YAxis />
                 <Tooltip />
-                <Legend wrapperStyle={{ fontSize: "12px" }} />
-                <Bar
-                  dataKey="verified"
-                  fill="#10b981"
-                  radius={[8, 8, 0, 0]}
-                  name="Verified"
-                />
-                <Bar
-                  dataKey="pending"
-                  fill="#f59e0b"
-                  radius={[8, 8, 0, 0]}
-                  name="Pending"
-                />
-                <Bar
-                  dataKey="rejected"
-                  fill="#ef4444"
-                  radius={[8, 8, 0, 0]}
-                  name="Rejected"
-                />
+                <Legend />
+                <Bar dataKey="verified" name="Verified" fill="#10b981" />
+                <Bar dataKey="pending" name="Pending" fill="#f59e0b" />
+                <Bar dataKey="rejected" name="Rejected" fill="#ef4444" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
-            Key Performance Indicators
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {kpis.map((kpi, index) => (
-              <div key={index}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-sm font-medium text-gray-600">
-                    {kpi.label}
-                  </span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-                <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-                  {kpi.value}
-                </div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-gray-500">
-                    Target: {kpi.target}
-                  </span>
-                  <span className="text-xs text-green-600 font-semibold">
-                    ✓ On Track
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full transition-all"
-                    style={{ width: `${kpi.progress}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom Insights */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-            <div className="text-blue-600 text-2xl sm:text-3xl mb-3">📈</div>
-            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">
-              Growth Trend
-            </h3>
-            <p className="text-gray-700 text-xs sm:text-sm mb-3">
-              User growth increased by 18.2% this month, exceeding quarterly
-              targets.
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+            <h4 className="font-bold">Quick Actions</h4>
+            <p className="text-sm text-gray-600 mt-2">
+              You can Verify or unverify Users in Verifications Tab.
             </p>
-            <button className="text-blue-600 font-semibold text-xs sm:text-sm hover:underline">
-              View Details →
-            </button>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-            <div className="text-green-600 text-2xl sm:text-3xl mb-3">💡</div>
-            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">
-              Best Performing
-            </h3>
-            <p className="text-gray-700 text-xs sm:text-sm mb-3">
-              Loan approvals are processing 40% faster with 97.6% repayment
-              rate.
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
+            <h4 className="font-bold">Data Source</h4>
+            <p className="text-sm text-gray-600 mt-2">
+              This dashboard Only Showcase Recent Activities
             </p>
-            <button className="text-green-600 font-semibold text-xs sm:text-sm hover:underline">
-              View Details →
-            </button>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-            <div className="text-purple-600 text-2xl sm:text-3xl mb-3">🎯</div>
-            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">
-              Action Needed
-            </h3>
-            <p className="text-gray-700 text-xs sm:text-sm mb-3">
-              45 pending verifications require attention to maintain service
-              quality.
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+            <h4 className="font-bold">Notes</h4>
+            <p className="text-sm text-gray-600 mt-2">
+              Revenue & loan charts To be Implemented.
             </p>
-            <button className="text-purple-600 font-semibold text-xs sm:text-sm hover:underline">
-              Review Now →
-            </button>
           </div>
         </div>
       </div>
@@ -469,4 +428,4 @@ const Analytics = () => {
   )
 }
 
-export default Analytics
+export default AdminDashboard

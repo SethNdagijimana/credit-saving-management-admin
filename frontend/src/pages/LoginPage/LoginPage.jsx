@@ -1,5 +1,8 @@
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 import { useState } from "react"
+import { useDispatch } from "react-redux"
+import { useNavigate } from "react-router-dom"
+import { userAuthenticationAction } from "../../actions/login/login-action"
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" })
@@ -7,16 +10,26 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleSubmit = (e) => {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
     setLoading(true)
+    try {
+      const result = await dispatch(userAuthenticationAction(formData)).unwrap()
 
-    // Simulate login
-    setTimeout(() => {
+      if (result?.token && result?.user) {
+        navigate("/dashboard")
+      } else {
+        setError("Invalid login response")
+      }
+    } catch (err) {
+      setError(err?.message || "Login failed")
+    } finally {
       setLoading(false)
-      // Handle navigation here
-    }, 2000)
+    }
   }
 
   return (

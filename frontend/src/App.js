@@ -1,5 +1,6 @@
 import React, { Suspense } from "react"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
+import ProtectedRoute from "./components/ProtectedRoute"
 
 const Admin = React.lazy(() => import("./pages/Dashboard/Admin"))
 const LogIn = React.lazy(() => import("./pages/LoginPage/LoginPage"))
@@ -14,7 +15,14 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route exact path="/" name="Login" element={<LogIn />} />
-      <Route path="/dashboard/*" element={<Admin />} />
+      <Route
+        path="/dashboard/*"
+        element={
+          <ProtectedRoute requiredType={["admin"]}>
+            <Admin />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   )
 }

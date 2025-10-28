@@ -53,58 +53,58 @@ apiCall.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-apiCall.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config
+// apiCall.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            return apiCall(originalRequest)
-          })
-          .catch((err) => Promise.reject(err))
-      }
+//     if (error.response?.status === 401 && !originalRequest._retry) {
+//       if (isRefreshing) {
+//         return new Promise((resolve, reject) => {
+//           failedQueue.push({ resolve, reject })
+//         })
+//           .then((token) => {
+//             originalRequest.headers.Authorization = `Bearer ${token}`
+//             return apiCall(originalRequest)
+//           })
+//           .catch((err) => Promise.reject(err))
+//       }
 
-      originalRequest._retry = true
-      isRefreshing = true
+//       originalRequest._retry = true
+//       isRefreshing = true
 
-      try {
-        const refreshToken = localStorage.getItem("refreshToken")
-        if (!refreshToken) throw new Error("No refresh token")
+//       try {
+//         const refreshToken = localStorage.getItem("refreshToken")
+//         if (!refreshToken) throw new Error("No refresh token")
 
-        const response = await axios.post(`${url}/api/auth/refresh/`, {
-          refresh: refreshToken
-        })
+//         const response = await axios.post(`${url}/auth/refresh/`, {
+//           refresh: refreshToken
+//         })
 
-        const newAccessToken = response.data.access
-        localStorage.setItem("accessToken", newAccessToken)
+//         const newAccessToken = response.data.access
+//         localStorage.setItem("accessToken", newAccessToken)
 
-        processQueue(null, newAccessToken)
+//         processQueue(null, newAccessToken)
 
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-        return apiCall(originalRequest)
-      } catch (refreshError) {
-        processQueue(refreshError, null)
+//         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+//         return apiCall(originalRequest)
+//       } catch (refreshError) {
+//         processQueue(refreshError, null)
 
-        localStorage.removeItem("accessToken")
-        localStorage.removeItem("refreshToken")
-        localStorage.removeItem("user")
+//         localStorage.removeItem("accessToken")
+//         // localStorage.removeItem("refreshToken")
+//         localStorage.removeItem("user")
 
-        window.location.href = "/signIn"
+//         window.location.href = "/login"
 
-        return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
-      }
-    }
+//         return Promise.reject(refreshError)
+//       } finally {
+//         isRefreshing = false
+//       }
+//     }
 
-    return Promise.reject(error)
-  }
-)
+//     return Promise.reject(error)
+//   }
+// )
 
 export default apiCall

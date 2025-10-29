@@ -4,31 +4,21 @@ import {
   getAllUsersService,
   getUnverifiedUsersService
 } from "../services/adminUserService.js"
+import { getAllTransactionsService } from "../services/userService.js"
 
 export const getAllUsers = async (req, res) => {
-  try {
-    const results = await getAllUsersService()
-    res.json({
-      users: results.map(adminUserDTO)
-    })
-  } catch (error) {
-    console.error("Get all users error:", error)
-    res.status(500).json({ message: "Server error" })
-  }
+  const results = await getAllUsersService()
+  res.json({
+    users: results.map(adminUserDTO)
+  })
 }
 
 export const getUnverifiedUsers = async (req, res) => {
-  try {
-    const results = await getUnverifiedUsersService()
-    res.json({
-      users: results.map(adminUserDTO)
-    })
-  } catch (error) {
-    console.error("Get unverified users error:", error)
-    res.status(500).json({ message: "Server error" })
-  }
+  const results = await getUnverifiedUsersService()
+  res.json({
+    users: results.map(adminUserDTO)
+  })
 }
-
 export const verifyUserDevice = async (req, res) => {
   const { userId } = req.params
   const user = await User.verifyDevice(userId)
@@ -48,4 +38,14 @@ export const deleteUser = async (req, res) => {
   const user = await User.delete(userId)
   if (!user) return res.status(404).json({ message: "User not found" })
   res.json({ message: "User deleted", userId: user.id })
+}
+
+export const getAllTransactions = async (req, res) => {
+  try {
+    const transactions = await getAllTransactionsService()
+    res.json({ transactions })
+  } catch (error) {
+    console.error("Error fetching transactions:", error)
+    res.status(500).json({ message: "Server error" })
+  }
 }

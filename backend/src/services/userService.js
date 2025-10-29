@@ -21,3 +21,18 @@ export const getUnverifiedUsers = async (req, res) => {
     )
   })
 }
+
+export const getAllTransactionsService = async () => {
+  const result = await pool.query(
+    `SELECT
+        t.*,
+        u.name AS user_name,
+        a.account_number
+     FROM transactions t
+     LEFT JOIN users u ON u.id = t.user_id
+     LEFT JOIN accounts a ON a.user_id = t.user_id
+     ORDER BY t.created_at DESC`
+  )
+
+  return result.rows
+}

@@ -15,21 +15,23 @@ class User {
 
   static async findAll() {
     const result = await pool.query(
-      "SELECT id, name, email, phone_number, device_id, verified, balance, created_at FROM users ORDER BY created_at DESC"
+      `SELECT id, name, email, phone_number, verified, created_at
+       FROM users ORDER BY created_at DESC`
     )
     return result.rows
   }
 
   static async findUnverified() {
     const result = await pool.query(
-      "SELECT id, name, email, phone_number, device_id, verified, balance, created_at FROM users WHERE verified = false ORDER BY created_at DESC"
+      `SELECT id, name, email, phone_number, verified, created_at
+       FROM users WHERE verified = false ORDER BY created_at DESC`
     )
     return result.rows
   }
 
   static async verifyDevice(userId) {
     const result = await pool.query(
-      "UPDATE users SET verified = true, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, device_id, verified",
+      "UPDATE users SET verified = true, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, verified",
       [userId]
     )
     return result.rows[0]
@@ -37,7 +39,7 @@ class User {
 
   static async unverifyDevice(userId) {
     const result = await pool.query(
-      "UPDATE users SET verified = false, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, device_id, verified",
+      "UPDATE users SET verified = false, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, verified",
       [userId]
     )
     return result.rows[0]

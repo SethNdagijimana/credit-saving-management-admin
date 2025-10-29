@@ -6,6 +6,7 @@ import { adminLogin } from "../controllers/adminController.js"
 import { listNotifications } from "../controllers/adminNotificationController.js"
 import {
   deleteUser,
+  getAllTransactions,
   getAllUsers,
   getUnverifiedUsers,
   unverifyUserDevice,
@@ -31,7 +32,7 @@ router.patch("/users/:userId/verify", adminAuth, verifyUserDevice)
 router.patch("/users/:userId/unverify", adminAuth, unverifyUserDevice)
 router.delete("/users/:userId", adminAuth, deleteUser)
 router.get("/notifications", adminAuth, listNotifications)
-
+router.get("/transactions", adminAuth, getAllTransactions)
 router.get("/", (req, res) => {
   res.json({ message: "Welcome to Credit Jambo Admin API" })
 })

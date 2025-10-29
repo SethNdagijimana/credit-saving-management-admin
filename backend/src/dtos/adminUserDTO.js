@@ -1,11 +1,11 @@
-export const adminUserDTO = (data) => ({
-  id: data.id,
-  name: data.name,
-  email: data.email,
-  deviceId: data.device_id,
-  verified: data.verified,
-  balance: data.balance || 0,
-  phone_number: data.phone_number || null,
-  lastTransaction: data.lastTransaction || null,
-  createdAt: data.createdAt
+export const adminUserDTO = (u) => ({
+  id: u.id,
+  name: u.name,
+  email: u.email,
+  phone_number: u.phone_number,
+  verified: u.verified,
+  accountNumber: u.account_number || null,
+  balance: Number(u.balance) || 0,
+  lastTransaction: u.lastTransaction || null,
+  createdAt: u.created_at ? new Date(u.created_at).toISOString() : null
 })

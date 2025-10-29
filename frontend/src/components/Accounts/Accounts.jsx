@@ -5,9 +5,11 @@ import { useDispatch, useSelector } from "react-redux"
 import {
   deleteUser,
   fetchAllUsers,
+  fetchUserTransactions,
   unverifyUser,
   verifyUser
 } from "../../actions/login/login-action"
+import TransactionModal from "../Transactionmodal/TransactionModal"
 import ConfirmDeleteModal from "./ConfirmDeleteModal"
 import UserModal from "./UserModal"
 
@@ -31,6 +33,7 @@ const Accounts = () => {
   const [usersPerPage] = useState(5)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
+  const [showTransactionModal, setShowTransactionModal] = useState(false)
 
   useEffect(() => {
     dispatch(fetchAllUsers())
@@ -52,6 +55,7 @@ const Accounts = () => {
       phone_number: u.phone_number,
       verified: Boolean(u.verified),
       balance: u.balance ?? 0,
+      accountNumber: u.accountNumber ?? null,
       created_at: u.createdAt ?? u.created_at ?? null,
       lastTransaction: u.lastTransaction ?? null,
 
@@ -210,10 +214,6 @@ const Accounts = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 sm:p-6 border-b border-gray-200 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                All Users ({filteredUsers.length})
-              </h2>
-
               <button
                 onClick={handleExportData}
                 className="flex items-center justify-center px-4 py-2 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition-colors text-sm"
@@ -272,26 +272,29 @@ const Accounts = () => {
             ) : (
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-600 whitespace-nowrap">
+                  <tr className="bg-primary border-b  border-gray-200">
+                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-white whitespace-nowrap">
                       User
                     </th>
-                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-600 whitespace-nowrap hidden md:table-cell">
+                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-white whitespace-nowrap hidden md:table-cell">
                       Balance
                     </th>
-                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-600 whitespace-nowrap hidden lg:table-cell">
-                      Device ID
-                    </th>
-                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-600 whitespace-nowrap hidden lg:table-cell">
+
+                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-white whitespace-nowrap hidden lg:table-cell">
                       Phone
                     </th>
-                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-600 whitespace-nowrap">
+
+                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-white whitespace-nowrap hidden lg:table-cell">
+                      Account N.
+                    </th>
+
+                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-white whitespace-nowrap">
                       Transaction
                     </th>
-                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-600 whitespace-nowrap hidden sm:table-cell">
+                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-white whitespace-nowrap hidden sm:table-cell">
                       Status
                     </th>
-                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    <th className="text-left py-4 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-white whitespace-nowrap">
                       Actions
                     </th>
                   </tr>
@@ -312,7 +315,7 @@ const Accounts = () => {
                               {user.name}
                             </p>
                             <p className="text-xs text-gray-500">
-                              #{user.email}
+                              {user.email}
                             </p>
                           </div>
                         </div>
@@ -324,13 +327,6 @@ const Accounts = () => {
                             {user.balance}
                           </span>
                         </div>
-                      </td>
-                      <td className="py-4 px-4 sm:px-6 hidden lg:table-cell">
-                        <code className="text-xs bg-gray-100 px-3 py-1.5 rounded-lg font-mono text-gray-700">
-                          {user.device_id
-                            ? `${user.device_id.substring(0, 12)}...`
-                            : "-"}
-                        </code>
                       </td>
 
                       <td className="py-4 px-4 sm:px-6 text-gray-600 text-sm hidden md:table-cell">
@@ -344,11 +340,22 @@ const Accounts = () => {
                       <td className="py-4 px-4 sm:px-6 text-gray-600 text-sm hidden md:table-cell">
                         <div className="flex items-center space-x-2">
                           <span className="truncate max-w-xs">
-                            {user.lastTransaction?.type
-                              ? user.lastTransaction.type
-                              : "-"}
+                            {user.accountNumber}
                           </span>
                         </div>
+                      </td>
+
+                      <td className="py-4 px-4 sm:px-6 text-gray-600 text-sm">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user)
+                            dispatch(fetchUserTransactions(user.id))
+                            setShowTransactionModal(true)
+                          }}
+                          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        >
+                          <Eye className="w-5 h-5 text-gray-600" />
+                        </button>
                       </td>
 
                       <td className="py-4 px-4 sm:px-6">
@@ -486,6 +493,13 @@ const Accounts = () => {
         onConfirm={handleDeleteUser}
         loading={actionLoading === userToDelete?.id}
       />
+
+      {showTransactionModal && (
+        <TransactionModal
+          user={selectedUser}
+          onClose={() => setShowTransactionModal(false)}
+        />
+      )}
     </div>
   )
 }

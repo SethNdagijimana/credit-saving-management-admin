@@ -41,9 +41,12 @@ export const deleteUser = async (req, res) => {
 }
 
 export const getAllTransactions = async (req, res) => {
+  const { userId } = req.query
+
   try {
-    const transactions = await getAllTransactionsService()
-    res.json({ transactions })
+    const transactions = await getAllTransactionsService(userId)
+
+    res.status(200).json({ transactions })
   } catch (error) {
     console.error("Error fetching transactions:", error)
     res.status(500).json({ message: "Server error" })

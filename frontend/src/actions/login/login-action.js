@@ -110,6 +110,18 @@ export const fetchNotifications = createAsyncThunk(
   }
 )
 
+export const fetchUserTransactions = createAsyncThunk(
+  "users/fetchUserTransactions",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apiCall.get(`/transactions?userId=${userId}`)
+      return { userId, transactions: data.transactions || [] }
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message)
+    }
+  }
+)
+
 export const logoutAction = createAsyncThunk(
   "auth/logout",
   async (_, { dispatch }) => {

@@ -64,9 +64,9 @@ const UserModal = ({
               <p className="font-semibold text-gray-900">{user.phone_number}</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl">
-              <p className="text-sm text-gray-600 mb-1">Device ID</p>
+              <p className="text-sm text-gray-600 mb-1">Account Number</p>
               <p className="font-mono text-xs text-gray-900 break-all">
-                {user.device_id}
+                {user.accountNumber}
               </p>
             </div>
           </div>

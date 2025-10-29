@@ -4,6 +4,7 @@ import {
   fetchAllUsers,
   fetchNotifications,
   fetchUnverifiedUsers,
+  fetchUserTransactions,
   unverifyUser,
   userAuthenticationAction,
   verifyUser
@@ -45,6 +46,10 @@ const initialState = {
   notifications: [],
   notificationsLoading: false,
   notificationsError: null,
+
+  transactions: [],
+  transactionsLoading: false,
+  transactionsError: null,
 
   actionLoading: false
 }
@@ -208,6 +213,19 @@ const userManagementSlice = createSlice({
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.notificationsLoading = false
         state.notificationsError = action.payload || action.error?.message
+      })
+
+      .addCase(fetchUserTransactions.pending, (state) => {
+        state.transactionsLoading = true
+        state.transactionsError = null
+      })
+      .addCase(fetchUserTransactions.fulfilled, (state, action) => {
+        state.transactionsLoading = false
+        state.transactions = action.payload.transactions
+      })
+      .addCase(fetchUserTransactions.rejected, (state, action) => {
+        state.transactionsLoading = false
+        state.transactionsError = action.payload || action.error?.message
       })
   }
 })

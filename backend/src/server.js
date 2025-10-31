@@ -14,10 +14,16 @@ app.use(cors())
 app.use(helmet())
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }))
 
-// Use routes
+// Routes
 app.use("/api", router)
 
-const PORT = process.env.PORT || 5001
-app.listen(PORT, () => console.log(`✅ Admin Server running on port ${PORT}`))
-
+// Swagger docs
 swaggerDocs(app)
+
+if (process.env.NODE_ENV !== "test") {
+  const PORT = process.env.PORT || 5001
+  app.listen(PORT, () => console.log(`✅ Admin Server running on port ${PORT}`))
+}
+
+// ✅ Export app for testing
+export default app

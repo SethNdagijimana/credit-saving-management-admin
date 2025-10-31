@@ -264,3 +264,31 @@ FrontEnd
 │
 └── package.json
 ```
+
+## Testing
+
+automated API tests built with Jest and Supertest to validate authentication, authorization, and user management endpoints.
+
+## What’s Covered
+
+# Admin Authentication:
+
+Ensures the /api/admin/login endpoint correctly handles missing and invalid credentials.
+
+# User Management:
+
+Tests that:
+
+Protected routes require a valid JWT token.
+
+/api/users returns all users when authorized.
+
+/api/users/unverified correctly filters and returns only unverified accounts.
+
+# How It Works
+
+Instead of connecting to a real PostgreSQL database, the tests use Jest’s module mocking to replace the real db.js connection with a simulated one
+
+## Run Tests
+
+cd/backend: npm test

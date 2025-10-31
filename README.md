@@ -29,6 +29,7 @@ Admin interface for managing Credit Jambo users and verifying device IDs.
 - Docker & Docker Compose
 - Node.js (for generating secrets)
 - Running Credit Jambo Client app (for shared database)
+- Make sure you use reachable email (you will get a confirmation email upon verification)
 
 ### Installation
 

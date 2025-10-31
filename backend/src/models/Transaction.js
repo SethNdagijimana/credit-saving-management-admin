@@ -1,7 +1,6 @@
 import pool from "../utils/db.js"
 
 class Transaction {
-  // Get last user transaction
   static async getLastTransaction(userId) {
     const result = await pool.query(
       `

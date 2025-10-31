@@ -5,6 +5,7 @@ import {
   getUnverifiedUsersService
 } from "../services/adminUserService.js"
 import { getAllTransactionsService } from "../services/userService.js"
+import { sendAccountVerifiedEmail } from "../utils/email.js"
 
 export const getAllUsers = async (req, res) => {
   const results = await getAllUsersService()
@@ -19,11 +20,26 @@ export const getUnverifiedUsers = async (req, res) => {
     users: results.map(adminUserDTO)
   })
 }
+
 export const verifyUserDevice = async (req, res) => {
-  const { userId } = req.params
-  const user = await User.verifyDevice(userId)
-  if (!user) return res.status(404).json({ message: "User not found" })
-  res.json({ message: "User verified", user })
+  try {
+    const { userId } = req.params
+    const user = await User.verifyDevice(userId)
+
+    if (!user) return res.status(404).json({ message: "User not found" })
+
+    try {
+      await sendAccountVerifiedEmail(user.email, user.name)
+      console.log(`Verification email sent to ${user.email}`)
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError.message)
+    }
+
+    res.json({ message: "User verified successfully", user })
+  } catch (error) {
+    console.error("Error verifying user:", error)
+    res.status(500).json({ message: "Server error" })
+  }
 }
 
 export const unverifyUserDevice = async (req, res) => {

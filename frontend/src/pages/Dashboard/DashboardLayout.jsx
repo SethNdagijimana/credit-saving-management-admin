@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Menu } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useSelector } from "react-redux"
 import { Link, useLocation } from "react-router-dom"
 
 const THEMES = {
@@ -61,6 +62,8 @@ const DashboardLayout = ({
 
   const location = useLocation()
   const themeColors = THEMES[theme] || THEMES.green
+
+  const { user } = useSelector((state) => state.app?.userMngmt || {})
 
   useEffect(() => {
     let resizeTimer
@@ -249,15 +252,15 @@ const DashboardLayout = ({
                 <div className="flex items-center gap-3 px-2">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
                     <span className="text-emerald-200 text-xs sm:text-sm font-bold">
-                      A
+                      CJ
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-xs sm:text-sm font-medium truncate">
-                      Admin User
+                      {user.name}
                     </p>
                     <p className="text-emerald-200/60 text-[10px] sm:text-xs truncate">
-                      admin@creditjambo.com
+                      {user.email}
                     </p>
                   </div>
                 </div>
@@ -268,7 +271,7 @@ const DashboardLayout = ({
             ) : (
               <div className="text-center">
                 <div className="w-8 h-8 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center mb-2">
-                  <span className="text-emerald-200 text-xs font-bold">A</span>
+                  <span className="text-emerald-200 text-xs font-bold">CJ</span>
                 </div>
                 <div className=" text-xs text-white">
                   {new Date().getFullYear()}

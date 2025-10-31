@@ -18,10 +18,19 @@ const AppNavBar = () => {
   const [localUnread, setLocalUnread] = useState(new Set())
 
   useEffect(() => {
-    const s = new Set(
-      (notifications || []).filter((n) => !n.is_read).map((n) => n.id)
+    if (!notifications) return
+
+    const newUnread = new Set(
+      notifications.filter((n) => !n.is_read).map((n) => n.id)
     )
-    setLocalUnread(s)
+
+    const isSame =
+      newUnread.size === localUnread.size &&
+      [...newUnread].every((id) => localUnread.has(id))
+
+    if (!isSame) {
+      setLocalUnread(newUnread)
+    }
   }, [notifications])
 
   useEffect(() => {
@@ -66,7 +75,6 @@ const AppNavBar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Notifications button */}
             <div className="relative notif-menu">
               <button
                 onClick={handleToggleNotifications}
@@ -82,7 +90,6 @@ const AppNavBar = () => {
                 )}
               </button>
 
-              {/* Notification panel */}
               {showNotifications && (
                 <div className="origin-top-right absolute right-0 mt-2 w-80 sm:w-96 max-h-[70vh] overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-50">
                   <div className="flex items-center justify-between p-3 border-b">
@@ -95,7 +102,6 @@ const AppNavBar = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
-                          // mark all read locally
                           setLocalUnread(new Set())
                           // TODO: dispatch(markAllNotificationsRead())
                         }}
@@ -139,7 +145,6 @@ const AppNavBar = () => {
                                       : "bg-gray-100 p-2 rounded"
                                   }`}
                                 >
-                                  {/* icon by type */}
                                   {n.type === "withdraw" ? (
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"

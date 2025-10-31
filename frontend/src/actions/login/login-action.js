@@ -38,8 +38,6 @@ export const fetchAllUsers = createAsyncThunk(
     try {
       const { data } = await apiCall.get("/users")
 
-      console.log("data==>", data)
-
       return data.users || []
     } catch (err) {
       return rejectWithValue(
